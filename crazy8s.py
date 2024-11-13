@@ -13,7 +13,6 @@ playDeck = []
 drawDeck = []
 playerHand = []
 opponentHand = []
-playCard = ""
 
 # Build the main deck
 cardValues = ['A','2','3','4','5','6','7','8','9','10','J','K','Q']
@@ -46,7 +45,7 @@ def calculateCardValueByIndex(ind: int):
 
 def calculateCardIndexByValue(val: str):
     """
-
+    Calculate the card index by the card value val
     """
     cardValue, cardSuit = val.split(' ')
     cardValueIndex = cardValues.index(cardValue)*4
@@ -80,37 +79,55 @@ def deal(hand: list, cards: list, quantity: int):
     
     return hand, updatedCards
 
-
-def playCard(playCard: str, hand: list, playDeck: list):
+def validatePlay(card: 'str', playDeck: list):
     """
-    Take playCard from hand and place in playDeck.
-    Return updated hand and updated playDeck.
     """
-    # add play card to playDeck
-    playDeck.append(playCard)
-    # remove playcard from hand
-    hand.remove(playCard)
+    topCardIndex = playDeck[-1]
+    topCard = calculateCardValueByIndex(topCardIndex)
     
-    return hand, playDeck
+    if card != '':
+        cardValue, cardSuit = card.split(' ')
+        if cardValue == '8':
+            return True
+        elif cardValue in topCard or cardSuit in topCard:
+            return True
+        else:
+            return False
+    else:
+        return True
+    
+def pickUpCards(qty: int, hand: list):
+    """
+    Add qty amount of cards to hand
+    """
+    for pickUp in range(0, qty):
+        pickUpCard = drawDeck[0]
+        drawDeck.remove(pickUpCard)
+        hand.append(pickUpCard)
 
 def play(card: str, hand: list, playDeck: list):
     """
     Plays a card
     """
+    
     if card != '':
         cardIndex = calculateCardIndexByValue(card)
-        hand.remove(cardIndex)
-        playDeck.append(cardIndex)
+        
+        # Remove card from hand and add to play deck
+        if cardIndex in hand:
+            hand.remove(cardIndex)
+            playDeck.append(cardIndex)
+            
+    # No card has been offered to play
+    # Add card from draw deck to hand and skip turn    
     else:
-        pickUpCard = drawDeck[0]
-        drawDeck.remove(pickUpCard)
-        hand.append(pickUpCard)
+        pickUpCards(1, hand)
 
 def computerPlay(opponentHand: list, playDeck: list):
     """
     Returns computers play
     """
-    # collect list of all playable cards on the top card
+    # Retrieve top card
     topCardIndex = playDeck[-1]
     
     # can only play a card in a certain index range (value range)
@@ -125,6 +142,7 @@ def computerPlay(opponentHand: list, playDeck: list):
     suitIndex = topCardIndex%4
     validCardsBySuit = [x*4+suitIndex for x in range(0,13)]
     
+    # collect list of all playable cards on the top card
     opponentPlayOptions = []
     for card in opponentHand:
         if card in validCardsByValue:
@@ -136,6 +154,7 @@ def computerPlay(opponentHand: list, playDeck: list):
             opponentPlayOptions.append(card)
             
     # calculate which card is best to play
+    # TO BE CONTINUED
     if len(opponentPlayOptions) > 1:
         #print([calculateCardValueByIndex(x) for x in opponentPlayOptions])
         return [opponentPlayOptions[-1]]
@@ -163,18 +182,24 @@ def displayGame():
 def advance(card: 'str'):
     """
     """
-    play(card, playerHand, playDeck)
+    playValidated = validatePlay(card, playDeck)
+    if playValidated:
+        play(card, playerHand, playDeck)
     
-    displayGame()
+        displayGame()
     
-    opponentPlay = computerPlay(opponentHand, playDeck)
+        opponentPlay = computerPlay(opponentHand, playDeck)
     
-    if opponentPlay[0] != '':
-        play(calculateCardValueByIndex(opponentPlay[0]), opponentHand, playDeck)
+        if opponentPlay[0] != '':
+            play(calculateCardValueByIndex(opponentPlay[0]), opponentHand, playDeck)
+        else:
+            play(opponentPlay[0], opponentHand, playDeck)
+        
+        displayGame()
     else:
-        play(opponentPlay[0], opponentHand, playDeck)
-    
-    displayGame()
+        topCard = calculateCardValueByIndex(playDeck[-1])
+        print("Can't play {0} on {1}.. Try again!".format(card, topCard))
+        displayGame()
     
     
 # =============================================================================
