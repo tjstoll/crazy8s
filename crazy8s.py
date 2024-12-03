@@ -4,6 +4,26 @@ Author TJ Stoll
 Console based game of crazy 8s
 
 November 7, 2024
+----------------------------
+
+Example game:
+    
+Opp:  ['K h', 'J s', '2 s', 'A d', '7 s', 'Q d', '10 h', '4 c']
+4 d | 35
+You:  ['9 h', 'J c', '8 h', 'J d', '5 h', '7 c', 'K s', '7 h']
+
+To play a card write this command:
+>>> advance('J d')
+
+----------------------------
+
+Rules:
+Play one card at a time on the top card
+Must match either suit or value (unless an 8)
+2s - opponent must pick up 2 cards
+8s - are crazy! Can be played on any card and you can change suit too
+Js - skip your opponents turn
+Q s - your opponent picks uop 5 cards
 """
 
 import random
@@ -34,18 +54,23 @@ cardRanking = [range(28,32),
 # Backend Mechanics ===========================================================
 def calculateCardValueByIndex(ind: int):
     """
-    Calculate the value of the card located at ind
+    Calculate the value of the card located at index ind. This assumes a list
+    of 52 cards in proper order.
     
     """
+    # Calculate the value of the card
     cardValueIndex = ind//4
+    # Calculate the Suit of the card
     cardSuitIndex = ind%4
+    # Assemble the card with suit and value for display
     card = cardValues[cardValueIndex] + ' ' + cardSuits[cardSuitIndex]
     
     return card
 
 def calculateCardIndexByValue(val: str):
     """
-    Calculate the card index by the card value val
+    Calculate the card index by the card value val. This assumes a list
+    of 52 cards in proper order.
     """
     cardValue, cardSuit = val.split(' ')
     cardValueIndex = cardValues.index(cardValue)*4
@@ -117,6 +142,9 @@ def play(card: str, hand: list, playDeck: list):
         if cardIndex in hand:
             hand.remove(cardIndex)
             playDeck.append(cardIndex)
+        
+        else:
+            print(card, 'not in hand!')
             
     # No card has been offered to play
     # Add card from draw deck to hand and skip turn    
@@ -127,7 +155,7 @@ def computerPlay(opponentHand: list, playDeck: list):
     """
     Returns computers play
     """
-    # Retrieve top card
+    # Retrieve top card from play deck
     topCardIndex = playDeck[-1]
     
     # can only play a card in a certain index range (value range)
@@ -157,7 +185,14 @@ def computerPlay(opponentHand: list, playDeck: list):
     # TO BE CONTINUED
     if len(opponentPlayOptions) > 1:
         #print([calculateCardValueByIndex(x) for x in opponentPlayOptions])
-        return [opponentPlayOptions[-1]]
+        cardToPlay = opponentPlayOptions[-1]
+        for ind in opponentPlayOptions:
+            for rank in cardRanking:
+                if ind in rank:
+                    cardToPlay = ind
+                    break
+                
+        return [cardToPlay]
     elif len(opponentPlayOptions) == 0:
         opponentPlayOptions.append('')
         
@@ -181,13 +216,19 @@ def displayGame():
 # Gameloop=====================================================================
 def advance(card: 'str'):
     """
+    Advance the game forward by applying the card played by the player.
     """
     playValidated = validatePlay(card, playDeck)
+    
+    # Game play loop
     if playValidated:
+        
+        # Human player turn
         play(card, playerHand, playDeck)
     
         displayGame()
-    
+        
+        # Computer player turn    
         opponentPlay = computerPlay(opponentHand, playDeck)
     
         if opponentPlay[0] != '':
